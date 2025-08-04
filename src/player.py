@@ -33,6 +33,22 @@ from matplotlib.image import imread
 import cv2
 
 class UserWebcamPlayer:
+    def __init__(self):
+        self.model = None
+        
+    def _load_model(self):
+        """Load the trained model if not already loaded"""
+        if self.model is None:
+            try:
+                # Load the most recent model from results directory
+                model_path = 'results/basic_model_20_epochs_timestamp_1754260749.keras'
+                self.model = models.load_model(model_path)
+                print(f"Model loaded successfully from {model_path}")
+            except Exception as e:
+                print(f"Error loading model: {e}")
+                # Fallback to a simple random prediction if model fails to load
+                self.model = None
+    
     def _process_frame(self, frame):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         width, height = frame.shape
@@ -94,21 +110,36 @@ class UserWebcamPlayer:
             raise e
     
     def _get_emotion(self, img) -> int:
-        # Your code goes here
-        #
-        # img an np array of size NxN (square), each pixel is a value between 0 to 255
-        # you have to resize this to image_size before sending to your model
-        # to show the image here, you can use:
-        # import matplotlib.pyplot as plt
-        # plt.imshow(img, cmap='gray', vmin=0, vmax=255)
-        # plt.show()
-        #
-        # You have to use your saved model, use resized img as input, and get one classification value out of it
-        # The classification value should be 0, 1, or 2 for neutral, happy or surprise respectively
-
-        # return an integer (0, 1 or 2), otherwise the code will throw an error
-        return 1
-        pass
+        # Load the model if not already loaded
+        self._load_model()
+        
+        if self.model is None:
+            # If model loading failed, return random emotion
+            return random.randint(0, 2)
+        
+        try:
+            # Resize the grayscale image to the required input size
+            img_resized = cv2.resize(img, image_size)
+            
+            # Convert grayscale to RGB by duplicating the channel 3 times
+            img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_GRAY2RGB)
+            
+            # Expand dimensions to match model input shape (batch_size, height, width, channels)
+            img_input = np.expand_dims(img_rgb, axis=0)
+            
+            # Make prediction using the model
+            predictions = self.model.predict(img_input, verbose=0)
+            
+            # Get the class with highest probability
+            predicted_class = np.argmax(predictions[0])
+            
+            # return an integer (0, 1 or 2), otherwise the code will throw an error
+            return int(predicted_class)
+            
+        except Exception as e:
+            print(f"Error in emotion prediction: {e}")
+            # Fallback to returning neutral emotion
+            return 0
     
     def get_move(self, board_state):
         row, col = None, None
