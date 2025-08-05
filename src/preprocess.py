@@ -31,8 +31,33 @@ def get_datasets():
     return train_dataset, validation_dataset, test_dataset
 
 def get_transfer_datasets():
-    # Your code replaces this by loading the dataset
-    # you can use image_dataset_from_directory, similar to how the _split_data function is using it
-    train_dataset, validation_dataset, test_dataset = None, None, None
-    # ...
+    from tensorflow.keras.utils import image_dataset_from_directory
+    import os
+
+    base_path = 'hymenoptera_data'
+    image_size = (150, 150)  
+    batch_size = 32
+
+    print('transfer learning train dataset:')
+    train_dataset = image_dataset_from_directory(
+        os.path.join(base_path, 'train'),
+        label_mode='categorical',
+        color_mode='rgb',
+        batch_size=batch_size,
+        image_size=image_size,
+        shuffle=True
+    )
+
+    print('transfer learning validation dataset:')
+    validation_dataset = image_dataset_from_directory(
+        os.path.join(base_path, 'val'),
+        label_mode='categorical',
+        color_mode='rgb',
+        batch_size=batch_size,
+        image_size=image_size,
+        shuffle=False
+    )
+
+    test_dataset = validation_dataset  
+
     return train_dataset, validation_dataset, test_dataset
